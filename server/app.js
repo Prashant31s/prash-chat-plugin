@@ -26,16 +26,17 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
   socket.on("username", async (m) => {
+    console.log("exe",m.user);
     try {
       // Checking if the username already exists
-      const existingUser = await User.findOne({ userName: m.userName });
+      const existingUser = await User.findOne({ userName: m.user });
 
       if (existingUser) {
         // If username is taken, emiting duplicate username event
         socket.emit("duplicate username", m);
       } else {
         // If username is available, save it to MongoDB
-        const newUser = new User({ userName: m.userName, socketId: socket.id });
+        const newUser = new User({ userName: m.user, socketId: socket.id });
         await newUser.save();
 
         socket.emit("approved username");
@@ -95,6 +96,16 @@ io.on("connection", (socket) => {
       console.error("Error editing message:", err);
     }
   });
+
+  socket.on("back-button-leave",async (socketId)=> {
+    try {
+      // Remove the user from the database on disconnect
+      await User.findOneAndDelete({ socketId: socketId });
+      console.log("User Disconnected", socketId);
+    } catch (err) {
+      console.error("Error removing user:", err);
+    }
+  })
 
   socket.on("disconnect", async () => {
     try {

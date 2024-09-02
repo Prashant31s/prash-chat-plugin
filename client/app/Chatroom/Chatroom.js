@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import socket from "../components/connect";
-import { useSearchParams } from "next/navigation";
+import { useRouter,useSearchParams } from "next/navigation";
 import { getRandomColor } from "../utils/colors";
+import { createBrowserHistory } from "history";
 
 function Chatroom(data) {
   const [mesuser, setMesuser] = useState([]);
@@ -10,11 +11,14 @@ function Chatroom(data) {
   const [message, setMessage] = useState("");
   const [socketID, setSocketID] = useState("");
   const searchParams = useSearchParams();
+  const router= useRouter();
   const user = searchParams.get("user");
+  const history = createBrowserHistory();
+  const [allow, setAllow] =useState(false);
 
   const newroom = searchParams.get("room");
   const [room, setRoom] = useState(newroom);
-  const [backgroundcolor, setbackgroundcolor] = useState("#000000");
+  // const [backgroundcolor, setbackgroundcolor] = useState("#000000");
   const [activeDropdown, setActiveDropdown] = useState(null);
 
   const handleSubmit = (e) => {
@@ -39,7 +43,37 @@ function Chatroom(data) {
   };
 
   useEffect(() => {
-    setbackgroundcolor(getRandomColor());
+    history.listen((update) => {
+      if (update.action === "POP") {
+        socket.emit("back-button-leave", socket.id);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    socket.emit("username", { user });
+    socket.on("duplicate username", (m) => {
+      router.push(`/`);
+      setAllow(false);
+      console.log("not approved")
+    });
+
+    socket.on("approved username", () => {
+      //setUsernameApproved(true);
+      setAllow(true);
+      console.log("approved");
+    });
+    return () => {
+      socket.off("duplicate username");
+      socket.off("username approved");
+    };
+  }, [user, router]);
+
+  useEffect(() => {
+    // setbackgroundcolor(getRandomColor());
+    if(!allow){
+      return;
+    }
     setSocketID(socket.id);
     socket.on("connect", () => {
       setSocketID(socket.id);
@@ -53,9 +87,12 @@ function Chatroom(data) {
       }));
       setMesuser(mes);
     });
-  }, []);
+  }, [allow]);
 
   useEffect(() => {
+    if(!allow){
+      return
+    }
     socket.on("receive-message", ({ message, user, _id }) => {
       setMesuser((prevMesuser) => [
         ...prevMesuser,
@@ -83,7 +120,7 @@ function Chatroom(data) {
       socket.off("message-edited");
       socket.off("message-deleted");
     };
-  }, [mesuser]);
+  }, [mesuser,allow]);
 
   const toggleDropdown = (messageId) => {
     setActiveDropdown(activeDropdown === messageId ? null : messageId);
