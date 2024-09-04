@@ -19,6 +19,7 @@ body {
   }
   
   .message {
+    height: 100%;
     background-color: #f1f1f1;
     padding: 5px;
     margin-bottom: 5px;

@@ -4,7 +4,7 @@ import { createServer } from 'http';  // Corrected import
 import mongoose from 'mongoose';
 import { Server } from 'socket.io';
 import connectDB from './config/db.js';
-import apiRoutes from './routes/api.js';
+import router from './routes/api.js';
 import Message from './models/Message.js';
 
 const app = express();
@@ -19,7 +19,7 @@ const io = new Server(server, {
 connectDB();
 
 app.use(express.json());
-app.use('/api', apiRoutes);
+app.use('/api', router);
 
 // Socket.IO connection
 io.on('connection', (socket) => {

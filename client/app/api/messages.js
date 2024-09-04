@@ -9,7 +9,7 @@ export default async function handler(req, res) {
       try {
         const { appId } = req.query;
         const response = await axios.get(`http://localhost:3000/api/messages?appId=${appId}`);
-        res.status(200).json(response.data);
+        res.status(500).json(response.data);
       } catch (error) {
         res.status(500).json({ message: 'Failed to fetch messages' });
       }
